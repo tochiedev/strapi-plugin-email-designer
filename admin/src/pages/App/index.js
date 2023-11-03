@@ -20,7 +20,7 @@ const App = () => {
     <PluginViewWrapper>
       <Switch>
         <Route path={`/plugins/${pluginId}`} component={HomePage} exact />
-        <Route path={`/plugins/${pluginId}/design/:templateId`} component={() => <Designer />} exact />
+        <Route path={`/plugins/${pluginId}/design/:type/:templateId`} component={() => <Designer />} exact />
         <Route path={`/plugins/${pluginId}/core/:coreEmailType`} component={() => <Designer isCore />} exact />
         <Route path={`/plugins/${pluginId}/how-to`} component={HowToPage} exact />
         <Route component={AnErrorOccurred} />

@@ -117,6 +117,7 @@ module.exports = ({ strapi }) => {
     };
 
     const attributes = ['text', 'html'];
+
     const templatedAttributes = attributes.reduce(
       (compiled, attribute) =>
         emailTemplate[attribute]

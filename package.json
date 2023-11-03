@@ -58,7 +58,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/alexzaganelli/strapi-plugin-email-designer.git"
+    "url": "git://github.com/tochiedev/strapi-plugin-email-designer.git"
   },
   "bugs": {
     "url": "https://github.com/alexzaganelli/strapi-plugin-email-designer/issues"
@@ -71,5 +71,8 @@
     "templates-design"
   ],
   "license": "MIT",
-  "funding": "https://www.buymeacoffee.com/alexzaganelli"
+  "funding": "https://www.buymeacoffee.com/alexzaganelli",
+  "publishConfig": {
+    "registry": "https://npm.pkg.github.com"
+  }
 }

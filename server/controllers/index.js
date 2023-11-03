@@ -2,8 +2,10 @@
 
 const designer = require('./designer');
 const config = require('./config');
+const layout = require('./layout');
 
 module.exports = {
   config,
-  designer
+  designer,
+  layout,
 };

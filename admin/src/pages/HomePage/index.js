@@ -1,5 +1,5 @@
 import React, { memo, useRef, useState, useEffect, useCallback } from 'react';
-import { request, useNotification, LoadingIndicatorPage } from '@strapi/helper-plugin';
+import { request, useFetchClient, useNotification, LoadingIndicatorPage } from '@strapi/helper-plugin';
 import { faCopy as CopyIcon, faInfoCircle, faFileExport, faFileImport } from '@fortawesome/free-solid-svg-icons';
 import { Eye, EyeStriked, Pencil, Duplicate, ExclamationMarkCircle, Trash, Plus, ArrowLeft } from '@strapi/icons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -15,7 +15,7 @@ import { Stack } from '@strapi/design-system/Stack';
 import { Flex } from '@strapi/design-system/Flex';
 import { Typography } from '@strapi/design-system/Typography';
 import { Tabs, Tab, TabGroup, TabPanels, TabPanel } from '@strapi/design-system/Tabs';
-import { Layout, BaseHeaderLayout, ContentLayout } from '@strapi/design-system/Layout';
+import { Layout, BaseHeaderLayout, ContentLayout, Row } from '@strapi/design-system/Layout';
 import { isEmpty, isNil, pick, uniqBy } from 'lodash';
 import GitHubButton from 'react-github-btn';
 
@@ -46,8 +46,8 @@ const FooterButtonsWrapper = styled.div`
 `;
 
 const HomePage = () => {
-  const { push, goBack } = useHistory();
   const [emailTemplates, setEmailTemplates] = useState([]);
+  const [layoutTemplates, setLayoutTemplates] = useState([]);
   const [deleteConfirmationModal, setDeleteConfirmationModal] = useState(false);
   const [duplicateConfirmationModal, setDuplicateConfirmationModal] = useState(false);
   const [importConfirmationModal, setImportConfirmationModal] = useState(false);
@@ -55,8 +55,11 @@ const HomePage = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('customEmailTemplates');
   const toggleNotification = useNotification(); // FIXME: useNotification cause re-rendering
+  const { get, post } = useFetchClient();
+  const { push, goBack } = useHistory();
 
   const emailTemplatesFileSelect = useRef(null);
+  const layoutTemplatesFileSelect = useRef(null);
 
   // TODO: handle current locale
   const dateFormat = 'DD/MM/YYYY HH:mm';
@@ -69,9 +72,26 @@ const HomePage = () => {
       templatesData.forEach((template) => {
         template.createdAt = dayjs(template.createdAt).format(dateFormat);
       });
-
       setEmailTemplates(
-        templatesData.map((row) => pick(row, ['id', 'templateReferenceId', 'name', 'enabled', 'createdAt']))
+        templatesData.map((row) =>
+          pick(row, ['id', 'type', 'layout', 'templateReferenceId', 'name', 'enabled', 'createdAt']),
+        ),
+      );
+    })();
+  }, []);
+
+  useEffect(() => {
+    (async () => {
+      //layout.
+      let layoutsData = await request(`/${pluginId}/layouts`, {
+        method: 'GET',
+      });
+      layoutsData.forEach((template) => {
+        template.createdAt = dayjs(template.createdAt).format(dateFormat);
+      });
+
+      setLayoutTemplates(
+        layoutsData.map((row) => pick(row, ['id', 'templateReferenceId', 'name', 'enabled', 'createdAt'])),
       );
     })();
   }, []);
@@ -188,7 +208,15 @@ const HomePage = () => {
 
   const emailTemplatesHeaders = [
     { name: getMessage('table.name'), value: 'name' },
-    // { name: getMessage('table.templateId'), value: 'id' },
+    { name: getMessage('table.templateReferenceId'), value: 'templateReferenceId' },
+    { name: 'type', value: 'type' },
+    { name: 'layout', value: 'layout' },
+    { name: getMessage('table.enabled'), value: 'enabled' },
+    { name: getMessage('table.createdAt'), value: 'createdAt' },
+  ];
+
+  const layoutTemplatesHeaders = [
+    { name: getMessage('table.name'), value: 'name' },
     { name: getMessage('table.templateReferenceId'), value: 'templateReferenceId' },
     { name: getMessage('table.enabled'), value: 'enabled' },
     { name: getMessage('table.createdAt'), value: 'createdAt' },
@@ -302,9 +330,15 @@ const HomePage = () => {
               </Link>
             }
             primaryAction={
-              <Button startIcon={<Plus />} onClick={() => push(getUrl('design/new'))}>
-                {getMessage('newTemplate')}
-              </Button>
+              <Flex>
+                <Button startIcon={<Plus />} onClick={() => push(getUrl(`design/email/new`))}>
+                  {getMessage('newTemplate')}
+                </Button>
+                <div className="" style={{ width: '20px' }}></div>
+                <Button startIcon={<Plus />} onClick={() => push(getUrl(`design/layout/new`))}>
+                  {getMessage('newLayout')}
+                </Button>
+              </Flex>
             }
             title={getMessage('plugin.name')}
             subtitle={getMessage('header.description')}
@@ -319,7 +353,8 @@ const HomePage = () => {
             >
               <Tabs>
                 <Tab>{getMessage('customEmailTemplates')}</Tab>
-                <Tab>{getMessage('coreEmailTemplates')}</Tab>
+                <Tab>{getMessage('customLayoutTemplates')}</Tab>
+                {/* <Tab>{getMessage('coreEmailTemplates')}</Tab> */}
               </Tabs>
 
               <TabPanels>
@@ -327,11 +362,11 @@ const HomePage = () => {
                   <Table
                     colCount={emailTemplatesHeaders.length}
                     rowCount={emailTemplates.length}
-                    footer={
-                      <TFooter icon={<Plus />} onClick={() => push(getUrl('design/new'))}>
-                        Add another field to this collection type
-                      </TFooter>
-                    }
+                    // footer={
+                    //   <TFooter icon={<Plus />} onClick={() => push(getUrl('design/new'))}>
+                    //     Add another field to this collection type
+                    //   </TFooter>
+                    // }
                   >
                     <Thead>
                       <Tr>
@@ -358,6 +393,9 @@ const HomePage = () => {
                             <Typography textColor="neutral800">{template.templateReferenceId}</Typography>
                           </Td>
                           <Td>
+                            <Typography textColor="neutral800">{template.type}</Typography>
+                          </Td>
+                          <Td>
                             <Typography textColor="neutral800">
                               {template.enabled === true ? <Eye fill="#dedede" /> : <EyeStriked fillColor="#dedede" />}
                             </Typography>
@@ -370,7 +408,7 @@ const HomePage = () => {
                               <IconButton
                                 label={getMessage('tooltip.edit')}
                                 icon={<Pencil />}
-                                onClick={() => push(getUrl(`design/${template.id}`))}
+                                onClick={() => push(getUrl(`design/email/${template.id}`))}
                                 noBorder
                               />
 
@@ -398,7 +436,7 @@ const HomePage = () => {
                                     },
                                     (err) => {
                                       console.error('Could not copy text: ', err);
-                                    }
+                                    },
                                   );
                                 }}
                                 noBorder
@@ -420,6 +458,96 @@ const HomePage = () => {
                   </Table>
                 </TabPanel>
 
+                {/* LAYOUT */}
+                <TabPanel>
+                  <Table colCount={layoutTemplatesHeaders.length} rowCount={layoutTemplates.length}>
+                    <Thead>
+                      <Tr>
+                        {layoutTemplatesHeaders.map((header) => (
+                          <Th key={header.value}>
+                            <Typography variant="sigma">{header.name}</Typography>
+                          </Th>
+                        ))}
+                        <Th>
+                          <Typography variant="sigma">{getMessage('table.actions')}</Typography>
+                        </Th>
+                      </Tr>
+                    </Thead>
+                    <Tbody>
+                      {layoutTemplates.map((template, index) => (
+                        <Tr key={index}>
+                          <Td>
+                            <Typography textColor="neutral800">{template.name}</Typography>
+                          </Td>
+
+                          <Td>
+                            <Typography textColor="neutral800">{template.templateReferenceId}</Typography>
+                          </Td>
+
+                          <Td>
+                            <Typography textColor="neutral800">
+                              {template.enabled === true ? <Eye fill="#fff" /> : <EyeStriked fillColor="#fff" />}
+                            </Typography>
+                          </Td>
+                          <Td>
+                            <Typography textColor="neutral800">{template.createdAt}</Typography>
+                          </Td>
+                          <Td>
+                            <Flex>
+                              <IconButton
+                                label={getMessage('tooltip.edit')}
+                                icon={<Pencil />}
+                                onClick={() => push(getUrl(`design/layout/${template.id}`))}
+                                noBorder
+                              />
+
+                              <IconButton
+                                label={getMessage('tooltip.duplicate')}
+                                icon={<Duplicate fill="#000000" />}
+                                onClick={() => setDuplicateConfirmationModal(template.id)}
+                                noBorder
+                              />
+
+                              <IconButton
+                                label={getMessage('tooltip.copyTemplateId')}
+                                // FIXME: use Strapi's icon
+                                icon={<FontAwesomeIcon icon={CopyIcon} />}
+                                onClick={() => {
+                                  navigator.clipboard.writeText(`${template.id}`).then(
+                                    () => {
+                                      toggleNotification({
+                                        type: 'success',
+                                        message: {
+                                          id: `${pluginId}.notification.templateIdCopied`,
+                                        },
+                                      });
+                                      console.log('Template ID copied to clipboard successfully!');
+                                    },
+                                    (err) => {
+                                      console.error('Could not copy text: ', err);
+                                    },
+                                  );
+                                }}
+                                noBorder
+                              />
+
+                              <Box paddingLeft={1}>
+                                <IconButton
+                                  label={getMessage('tooltip.delete')}
+                                  icon={<Trash />}
+                                  onClick={() => setDeleteConfirmationModal(template.id)}
+                                  noBorder
+                                />
+                              </Box>
+                            </Flex>
+                          </Td>
+                        </Tr>
+                      ))}
+                    </Tbody>
+                  </Table>
+                </TabPanel>
+
+                {/* STRAPI DEFAULTS */}
                 <TabPanel>
                   <Box background="neutral100">
                     <Table colCount={coreTemplatesHeaders.length} rowCount={10} rows={coreEmailTypes}>
@@ -479,32 +607,33 @@ const HomePage = () => {
                 </Flex>
               )}
 
-              {activeTab === 'customEmailTemplates' && (
-                <FooterButtonsWrapper>
-                  {emailTemplates?.length > 0 && (
-                    <Button
-                      onClick={() => handleTemplatesExport()}
-                      color="success"
-                      icon={<FontAwesomeIcon icon={faFileExport} />}
-                    >
-                      {getMessage('designer.exportTemplates')}
-                    </Button>
-                  )}
+              {activeTab === 'customEmailTemplates' ||
+                (activeTab === 'customLayoutTemplates' && (
+                  <FooterButtonsWrapper>
+                    {emailTemplates?.length > 0 && (
+                      <Button
+                        onClick={() => handleTemplatesExport()}
+                        color="success"
+                        icon={<FontAwesomeIcon icon={faFileExport} />}
+                      >
+                        {getMessage('designer.exportTemplates')}
+                      </Button>
+                    )}
 
-                  <Button
-                    onClick={() => {
-                      emailTemplatesFileSelect?.current?.click();
-                    }}
-                    color="delete"
-                    icon={<FontAwesomeIcon icon={faFileImport} />}
-                  >
-                    {getMessage('designer.importTemplates')}
-                  </Button>
-                  <span style={{ display: 'none' }}>
-                    <input type="file" ref={emailTemplatesFileSelect} onChange={handleFileChange} />
-                  </span>
-                </FooterButtonsWrapper>
-              )}
+                    <Button
+                      onClick={() => {
+                        emailTemplatesFileSelect?.current?.click();
+                      }}
+                      color="delete"
+                      icon={<FontAwesomeIcon icon={faFileImport} />}
+                    >
+                      {getMessage('designer.importTemplates')}
+                    </Button>
+                    <span style={{ display: 'none' }}>
+                      <input type="file" ref={emailTemplatesFileSelect} onChange={handleFileChange} />
+                    </span>
+                  </FooterButtonsWrapper>
+                ))}
             </FooterWrapper>
             {/* <FooterGitHubWrapper>
             </FooterGitHubWrapper> */}

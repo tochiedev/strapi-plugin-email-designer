@@ -47,4 +47,11 @@ module.exports = [
     handler: 'designer.saveCoreEmailType',
     config: { policies: [] },
   },
+  //Layouts.
+  {
+    method: 'GET',
+    path: '/layouts',
+    handler: 'layout.getLayouts',
+    config: { policies: [] },
+  },
 ];

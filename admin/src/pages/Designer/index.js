@@ -1,5 +1,5 @@
 import React, { useCallback, useState, useEffect, memo, useRef } from 'react';
-import { request, auth, useNotification, LoadingIndicatorPage } from '@strapi/helper-plugin';
+import { request, useFetchClient, auth, useNotification, LoadingIndicatorPage } from '@strapi/helper-plugin';
 import { Box } from '@strapi/design-system/Box';
 import { Textarea } from '@strapi/design-system/Textarea';
 import { Tabs, Tab, TabGroup } from '@strapi/design-system/Tabs';
@@ -10,7 +10,7 @@ import { Link } from '@strapi/design-system/Link';
 import { isEmpty, isFinite, merge } from 'lodash';
 import { ArrowLeft } from '@strapi/icons';
 import { standardEmailRegistrationTemplate } from '../../helpers/coreTemplateHelper';
-
+import { Select, Option } from '@strapi/design-system/Select';
 import PropTypes from 'prop-types';
 import striptags from 'striptags';
 import EmailEditor from 'react-email-editor';
@@ -204,7 +204,8 @@ const EmailDesignerPage = ({ isCore = false }) => {
   const emailEditorRef = useRef();
   const history = useHistory();
 
-  const { templateId, coreEmailType } = useParams();
+  const { templateId, type, coreEmailType } = useParams();
+  // console.log(templateId, type, coreEmailType);
   const [templateData, setTemplateData] = useState();
   const [referenceIdEmpty, setReferenceIdEmpty] = useState('');
   const [enablePrompt, togglePrompt] = useState(false);
@@ -218,6 +219,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
   const [isMediaLibraryOpen, setIsMediaLibraryOpen] = useState(false);
   const [filesToUpload /* , setFilesToUpload */] = useState({});
   const toggleNotification = useNotification();
+  const { get, post } = useFetchClient();
 
   const saveDesign = async () => {
     if (!coreEmailType && !templateData?.templateReferenceId) {
@@ -249,26 +251,24 @@ const EmailDesignerPage = ({ isCore = false }) => {
 
     try {
       if (templateId) {
-        await request(`/${pluginId}/templates/${templateId}`, {
-          method: 'POST',
-          body: {
-            name: templateData?.name || getMessage('noName'),
-            templateReferenceId: templateData?.templateReferenceId,
-            subject: templateData?.subject || '',
-            design,
-            bodyText,
-            bodyHtml: html,
-          },
-        });
+        const payload = {
+          name: templateData?.name || getMessage('noName'),
+          templateReferenceId: templateData?.templateReferenceId,
+          subject: templateData?.subject || '',
+          design,
+          bodyText,
+          bodyHtml: html,
+          // type: templateData?.type || 'template',
+        };
+        console.log(payload);
+
+        await post(`/${pluginId}/templates/${templateId}`, payload);
       } else if (coreEmailType) {
-        await request(`/${pluginId}/core/${coreEmailType}`, {
-          method: 'POST',
-          body: {
-            subject: templateData?.subject || '',
-            design,
-            message: html,
-            bodyText,
-          },
+        await post(`/${pluginId}/core/${coreEmailType}`, {
+          subject: templateData?.subject || '',
+          design,
+          message: html,
+          bodyText,
         });
       }
 
@@ -326,7 +326,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
       emailEditorRef.current?.editor?.registerCallback('selectImage', onSelectImageHandler);
 
       if (templateData) emailEditorRef.current.editor.loadDesign(templateData.design);
-    }, 500);
+    }, 600);
   }, []);
 
   // Custom media uploads
@@ -352,7 +352,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
   useEffect(() => {
     // load the editor config
     (async () => {
-      const editorConfigApi = await request(`/${pluginId}/config/editor`, { method: 'GET' });
+      const editorConfigApi = await get(`/${pluginId}/config/editor`);
 
       if (editorConfigApi) {
         if (editorConfigApi.projectId) {
@@ -378,7 +378,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
 
   useEffect(() => {
     if (
-      (!templateId && !coreEmailType) ||
+      (!type && !templateId && !coreEmailType) ||
       (coreEmailType && !['user-address-confirmation', 'reset-password'].includes(coreEmailType)) ||
       templateId === 'new'
     )
@@ -387,9 +387,10 @@ const EmailDesignerPage = ({ isCore = false }) => {
     (async () => {
       let _templateData = {};
 
-      if (templateId) _templateData = await request(`/${pluginId}/templates/${templateId}`, { method: 'GET' });
-      else if (coreEmailType) _templateData = await request(`/${pluginId}/core/${coreEmailType}`, { method: 'GET' });
+      if (templateId) _templateData = await get(`/${pluginId}/templates/${templateId}`);
+      else if (coreEmailType) _templateData = await get(`/${pluginId}/core/${coreEmailType}`);
 
+      // console.log(_templateData);
       if (coreEmailType && isEmpty(_templateData.design)) {
         let _message = _templateData.message;
 
@@ -422,7 +423,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
       if (emailEditorRef.current?.editor && templateData?.design) {
         emailEditorRef.current.editor.loadDesign(templateData.design);
       }
-    }, 600);
+    }, 700);
   }, [templateData]);
 
   return !templateData && !templateId === 'new' ? (
@@ -437,7 +438,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
         <>
           <Bar>
             {!isCore && (
-              <Box padding={0} style={{ width: 260, paddingRight: 10 }}>
+              <Box padding={0} style={{ width: 350, paddingRight: 10 }}>
                 <TextInput
                   required
                   name="templateReferenceId"
@@ -461,6 +462,22 @@ const EmailDesignerPage = ({ isCore = false }) => {
                 />
               </Box>
             )}
+            {/* <Box padding={0} style={{ width: '100%', paddingRight: 10 }}>
+              <Select
+                id="type"
+                value={templateData?.type || 'template'}
+                onChange={(value) => {
+                  setTemplateData((state) => ({ ...state, type: value }));
+                }}
+                style={{
+                  width: '100%',
+                }}
+                label={getMessage('designer.templateType')}
+              >
+                <Option value={'template'}>Template</Option>
+                <Option value={'layout'}>Layout</Option>
+              </Select>
+            </Box> */}
             <Box padding={0} style={{ width: isCore ? 450 : '100%', paddingRight: 10 }}>
               <TextInput
                 style={{
@@ -490,6 +507,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
                 value={templateData?.subject || ''}
               />
             </Box>
+
             <Box padding={0} style={{ display: 'flex', alignItems: 'flex-end', whiteSpace: 'nowrap' }}>
               <Button onClick={saveDesign} color="success" size={1}>
                 {getMessage('designer.action.saveTemplate')}
@@ -527,11 +545,11 @@ const EmailDesignerPage = ({ isCore = false }) => {
                     <EmailEditor
                       ref={emailEditorRef}
                       onLoad={onLoadHandler}
-                      locale={strapi.currentLanguage}
-                      appearance={editorAppearance}
-                      tools={editorTools}
+                      // locale={strapi.currentLanguage}
+                      // appearance={editorAppearance}
+                      // tools={editorTools}
                       options={editorOptions}
-                      projectId={projectId}
+                      // projectId={projectId}
                     />
                   </React.StrictMode>
                 )}

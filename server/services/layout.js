@@ -9,19 +9,21 @@
 module.exports = ({ strapi }) => {
   return {
     /**
-     * Promise to fetch a template.
+     * Promise to fetch a layout.
      * @return {Promise}
      */
     findOne(params) {
-      return strapi.query('plugin::email-designer.email-template').findOne({ where: params });
+      return strapi.query('plugin::email-designer.layout-template').findOne({ where: params });
     },
 
     /**
-     * Promise to fetch all templates.
+     * Promise to fetch all layout.
      * @return {Promise}
      */
     findMany(params) {
-      return strapi.query('plugin::email-designer.email-template').findMany({ where: params });
+      const layouts = strapi.query('plugin::email-designer.layout-template').findMany({ where: params });
+
+      return layouts ?? [];
     },
 
     /**
@@ -29,25 +31,24 @@ module.exports = ({ strapi }) => {
      * @return {Promise}
      */
     async create(values) {
-      console.log('values:', values);
-      return strapi.query('plugin::email-designer.email-template').create({ data: values });
+      return strapi.query('plugin::email-designer.layout-template').create({ data: values });
     },
 
     /**
-     * Promise to edit a template.
+     * Promise to edit a layout.
      * @return {Promise}
      */
     async update(params, values) {
       // FIXME: ⬇︎ avoid duplicating templateReferenceId field
-      return strapi.query('plugin::email-designer.email-template').update({ where: params, data: values });
+      return strapi.query('plugin::email-designer.layout-template').update({ where: params, data: values });
     },
 
     /**
-     * Promise to remove a template.
+     * Promise to remove a layout.
      * @return {Promise}
      */
     async delete(params) {
-      return strapi.query('plugin::email-designer.email-template').delete({ where: params });
+      return strapi.query('plugin::email-designer.layout-template').delete({ where: params });
     },
   };
 };

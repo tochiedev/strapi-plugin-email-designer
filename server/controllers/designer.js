@@ -68,7 +68,6 @@ module.exports = {
         templateId = 'new';
       }
     }
-
     try {
       const template =
         templateId === 'new'
