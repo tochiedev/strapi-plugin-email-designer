@@ -54,4 +54,10 @@ module.exports = [
     handler: 'layout.getLayouts',
     config: { policies: [] },
   },
+  {
+    method: 'POST',
+    path: '/layouts/:templateId',
+    handler: 'layout.saveTemplate',
+    config: { policies: [] },
+  },
 ];
