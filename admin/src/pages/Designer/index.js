@@ -867,14 +867,16 @@ const EmailDesignerPage = ({ isCore = false }) => {
           });
         } else {
           console.log("saving layout");
-          await post(`/${pluginId}/layouts/${templateId}`, {
+          const payload =  {
             name: templateData?.name || getMessage('noName'),
-            templateReferenceId: templateData?.templateReferenceId,
+            layoutReferenceId: templateData?.templateReferenceId,
             subject: templateData?.subject || '',
             design,
             bodyText,
             bodyHtml: html,
-          });
+          }
+          console.log(payload);
+          await post(`/${pluginId}/layouts/${templateId}`,payload);
         }
       } else if (coreEmailType) {
         await post(`/${pluginId}/core/${coreEmailType}`, {
