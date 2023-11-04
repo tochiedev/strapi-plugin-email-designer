@@ -856,6 +856,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
     try {
       if (templateId) {
         if (templateType === 'email') {
+          console.log("saving template");
           await post(`/${pluginId}/templates/${templateId}`, {
             name: templateData?.name || getMessage('noName'),
             templateReferenceId: templateData?.templateReferenceId,
@@ -865,6 +866,7 @@ const EmailDesignerPage = ({ isCore = false }) => {
             bodyHtml: html,
           });
         } else {
+          console.log("saving layout");
           await post(`/${pluginId}/layouts/${templateId}`, {
             name: templateData?.name || getMessage('noName'),
             templateReferenceId: templateData?.templateReferenceId,

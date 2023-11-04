@@ -48,6 +48,7 @@ module.exports = {
    * @return {Object}
    */
   saveLayout: async (ctx) => {
+    console.log(ctx.request.body);
     let { layoutId } = ctx.params;
 
     const { layoutReferenceId, import: importLayout } = ctx.request.body;

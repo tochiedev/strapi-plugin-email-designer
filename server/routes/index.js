@@ -56,7 +56,7 @@ module.exports = [
   },
   {
     method: 'POST',
-    path: '/layouts/:templateId',
+    path: '/layouts/:layoutId',
     handler: 'layout.saveLayout',
     config: { policies: [] },
   },
