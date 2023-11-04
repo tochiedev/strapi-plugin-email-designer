@@ -22,7 +22,7 @@
     "comment": ""
   },
   "attributes": {
-    "templateReferenceId": {
+    "layoutReferenceId": {
       "type": "integer",
       "required": false,
       "unique": true
